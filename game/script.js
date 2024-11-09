@@ -4,6 +4,7 @@ ctx = canvas.getContext('2d')
 canvas.height = window.innerHeight
 canvas.width = window.innerWidth
 
+
 // Initialize server
 const ws = new WebSocket(`ws://${window.location.host}`);
 
@@ -270,12 +271,14 @@ class Scene{
 
 		this.players = {} // all players in scene from server
 		this.projectiles = {} // all projectiles in scene from server
+
+		this.isDead = false
 	}
 	sendToServerGlobal(){
 		let ply = this.player
 		const player = JSON.stringify({id:this.id,tag:"player",x:this.x, y:this.y, 
 			                             dots: ply.dots, tower:{dots:ply.Tower.dots},
-			                             projectiles: ply.Tower.projectiles})
+			                             projectiles: ply.Tower.projectiles, isDead: this.isDead})
 		ws.send(player)
 	}
 	getServerData(){
@@ -284,10 +287,25 @@ class Scene{
 		let id = this.id
 		let x = this.x
 		let y = this.y
+		let scene = this
 
-		// Обработка получения сообщения
+		// Getting message
         ws.onmessage = function(event){
             const objects = JSON.parse(event.data)
+           	
+           	// If Player is disconnected or dead we are going to clear it
+           	for(let ply in players){
+           		if(objects[ply] == null){
+           			delete players[ply]
+           		}
+           	}
+           	for(let prj in projectiles){
+           		if(objects[prj] == null){
+           			delete projectiles[prj]
+           		}
+           	}
+
+           	// Update our data from server
             for(let obj in objects){
 
             	if(objects[obj].tag == "player"){
@@ -319,7 +337,7 @@ class Scene{
             }
           }
 
-    // Обработка ошибок подключения WebSocket
+    // Check errors of WebSocket
         ws.onerror = function(error) {
             console.error("WebSocket Error:", error)
         }
@@ -327,19 +345,20 @@ class Scene{
 	update(){
 		this.player.update()
 		for(let player in this.players){
-			if(player == this.id){continue}
+			if(player == this.id || this.players[player] == null){continue}
 			player = this.players[player]
 			player.update(false)
 		}
 		// Draw all projectiles
 		for(let prj in this.projectiles){
+			if(this.projectiles[prj] == null){continue}
 			prj = this.projectiles[prj]
 			for(let prjo in prj){
 				prjo = prj[prjo]
 				prjo.draw()
 			}
 		}
-		//Update position of projectile
+		// Update position of projectile
 		for(let prj in this.projectiles[this.id]){
 		this.player.Tower.projectiles[prj].x += Math.sin(this.player.Tower.projectiles[prj].dirDeg*Math.PI/180) 
 		this.player.Tower.projectiles[prj].y += Math.cos(this.player.Tower.projectiles[prj].dirDeg*Math.PI/180)
@@ -355,10 +374,11 @@ var player = new Player()
 scene.player = player
 
 let fps = 60
-
+/*
 setInterval(()=>{
-	console.log(scene.projectiles[scene.id])
-},1000)
+	scene.getServerData()
+	scene.sendToServerGlobal()
+},1000)*/
 function main(){
 	setTimeout(()=>{
 	window.requestAnimationFrame(main)
@@ -369,6 +389,7 @@ function main(){
 
 	scene.getServerData()
 	scene.sendToServerGlobal()
+	
 	keyboardInputDict.space = false
 }
 main()
