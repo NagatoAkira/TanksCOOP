@@ -150,7 +150,7 @@ class Tower{
 	}
 	shoot(){ // Shoot by Projectiles
 		let map = keyboardInputDict
-		map.space ? this.projectiles.push({x: scene.x, y: scene.y, dirDeg: this.dirDeg}):null
+		map.space ? this.projectiles.push({x: server.x, y: server.y, dirDeg: this.dirDeg}):null
 	}
 	draw(){ // draw Tower of Player Tank
 			let rad = 5
@@ -183,7 +183,8 @@ class Player{
 		this.dirDeg = 180
 		// Speed
 		this.speed = 8
-
+		// Health Points
+		this.hp = 3
 		// Init Tower to Shoot In Game
 		this.Tower = new Tower(this)
 	}
@@ -191,8 +192,8 @@ class Player{
 			this.x += x * this.speed
 			this.y += y * this.speed
 
-			scene.x += x * this.speed
-			scene.y += y * this.speed
+			server.x += x * this.speed
+			server.y += y * this.speed
 	}
 	rotate(deg){
 		let top = this.dots.top
@@ -261,7 +262,7 @@ class Player{
 	}
 }
 
-class Scene{
+class Server{
 	constructor(){
 		this.id = parseInt(10**8*Math.random())
 		this.player = null
@@ -278,7 +279,8 @@ class Scene{
 		let ply = this.player
 		const player = JSON.stringify({id:this.id,tag:"player",x:this.x, y:this.y, 
 			                             dots: ply.dots, tower:{dots:ply.Tower.dots},
-			                             projectiles: ply.Tower.projectiles, isDead: this.isDead})
+			                             projectiles: ply.Tower.projectiles, 
+			                             hp: this.player.hp, score: 0, isDead: this.isDead})
 		ws.send(player)
 	}
 	getServerData(){
@@ -287,7 +289,6 @@ class Scene{
 		let id = this.id
 		let x = this.x
 		let y = this.y
-		let scene = this
 
 		// Getting message
         ws.onmessage = function(event){
@@ -312,14 +313,14 @@ class Scene{
             	if(players[obj] == null){
             		players[obj] = new Player()
             	}
-            	if(obj != id){
             	players[obj].x = objects[obj].x - x + player.x 
             	players[obj].y = objects[obj].y - y + player.y
             	players[obj].dots = objects[obj].dots
             	players[obj].Tower.dots = objects[obj].tower.dots
-            	}
+            	players[obj].id = objects[obj].id
+            	players[obj].score = objects[obj].score
+            	players[obj].hp = objects[obj].hp
 							
-            	
             	if(projectiles[obj] == null){projectiles[obj] = []}
 
   						for(let prj in objects[obj].projectiles){
@@ -358,20 +359,52 @@ class Scene{
 				prjo.draw()
 			}
 		}
-		// Update position of projectile
+		// Update position of your projectiles
 		for(let prj in this.projectiles[this.id]){
 		this.player.Tower.projectiles[prj].x += Math.sin(this.player.Tower.projectiles[prj].dirDeg*Math.PI/180) 
 		this.player.Tower.projectiles[prj].y += Math.cos(this.player.Tower.projectiles[prj].dirDeg*Math.PI/180)
 		}
 	}
 }
-var scene = new Scene()
+
+class Interface{
+	constructor(){
+		this.players = server.players
+	}
+	showLeaderBoard(){
+		ctx.fillStyle = 'black'
+		ctx.font = "25px serif"
+		ctx.fillText("Leader Board", 15, 30)
+
+		ctx.font = "15px serif"
+		let count = 0
+		let gap = 15
+		let marginY = 60
+		for(let ply in this.players){
+			if(count == 10){break}
+			ctx.fillText(this.players[ply].id, 15, marginY+count*gap)
+			ctx.fillText(this.players[ply].score, 85, marginY+count*gap)
+			count++
+		}
+			ctx.fillRect(15, marginY+(count)*15, 100, 2)
+			ctx.fillText(this.players[server.id].id, 15, marginY+(count+1.5)*gap)
+			ctx.fillText(this.players[server.id].score, 85, marginY+(count+1.5)*gap)
+		
+	}
+	update(){
+		this.showLeaderBoard()
+	}
+}
+
+var server = new Server()
 
 // It needed to config draw functions for game objects
 initDrawConfigurationForAllObjectsInScene()
 
 var player = new Player()
-scene.player = player
+server.player = player
+
+var interface = new Interface()
 
 let fps = 60
 /*
@@ -385,10 +418,12 @@ function main(){
 	}, 1000/fps)
 	gameUpdate()
 
-	scene.update()
+	server.update()
 
-	scene.getServerData()
-	scene.sendToServerGlobal()
+	server.getServerData()
+	server.sendToServerGlobal()
+
+	interface.update()
 	
 	keyboardInputDict.space = false
 }

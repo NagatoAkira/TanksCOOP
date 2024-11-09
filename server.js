@@ -12,7 +12,6 @@ var all_data = {}
 var user_connection = {}
 
 setInterval(()=>{
-console.log(user_connection)
 for(let usr in user_connection){
     user_connection[usr] = false
 }
