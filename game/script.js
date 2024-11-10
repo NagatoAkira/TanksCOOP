@@ -112,8 +112,6 @@ class Projectile{
 		this.x = x
 		this.y = y 
 		this.dirDeg = dirDeg
-
-		this.speed = 5
 	}
 	draw(){
 		drawCircle(this.x, this.y, 10)
@@ -133,6 +131,8 @@ class Tower{
 		// Projectiles which were shoot by Tower 
 		// (only configuration other operation will be completed by server)
 		this.projectiles = [] // There will be added projetctiles
+
+		this.projectileSpeed = 5
 	}
 	rotate(deg){
 		deg *= 4
@@ -150,7 +150,7 @@ class Tower{
 	}
 	shoot(){ // Shoot by Projectiles
 		let map = keyboardInputDict
-		map.space ? this.projectiles.push({x: server.x, y: server.y, dirDeg: this.dirDeg}):null
+		map.space ? this.projectiles.push({x: server.x, y: server.y, dirDeg: this.dirDeg, speed:this.projectileSpeed}):null
 		if(map.space){
 			isShoot = false
 			shootTimer.curr = 0
@@ -377,14 +377,21 @@ class Server{
 			if(this.projectiles[prj] == null){continue}
 			prj = this.projectiles[prj]
 			for(let prjo in prj){
+				if(prj[prjo] == null){continue}
 				prjo = prj[prjo]
 				prjo.draw()
 			}
 		}
 		// Update position of your projectiles
 		for(let prj in this.projectiles[this.id]){
-		this.player.Tower.projectiles[prj].x += Math.sin(this.player.Tower.projectiles[prj].dirDeg*Math.PI/180) 
-		this.player.Tower.projectiles[prj].y += Math.cos(this.player.Tower.projectiles[prj].dirDeg*Math.PI/180)
+		let prjo  = this.player.Tower.projectiles[prj]
+		if(prjo == null){continue}
+		prjo.x += Math.sin(prjo.dirDeg*Math.PI/180) * prjo.speed
+		prjo.y += Math.cos(prjo.dirDeg*Math.PI/180) * prjo.speed
+
+		if(getDistance(prjo.x, prjo.y, this.x, this.y) > 2000){
+			this.projectiles[this.id][prj] = null
+		}
 		}
 	}
 }
@@ -418,7 +425,8 @@ class Interface{
 		if(isShoot == false){
 			let player = server.player
 			let text = ((shootTimer.end - shootTimer.curr)*0.1).toFixed(1).toString()
-			ctx.font = "17px serif"
+			ctx.fillStyle = "rgba(0,0,0,0.5)"
+			ctx.font = "600 15px Host Grotesk"
 			ctx.fillText(text+'s', player.x-ctx.measureText(text).width/2-2, player.y+5)
 		}
 	}
@@ -450,7 +458,7 @@ server.player = player
 
 // Make shoot limit per second 
 var isShoot = false
-var shootTimer = {curr:0, end:5}
+var shootTimer = {curr:0, end:30}
 setInterval(()=>{
 if(shootTimer.curr >= shootTimer.end){
 isShoot = true
