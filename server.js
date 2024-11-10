@@ -10,7 +10,13 @@ app.use(express.static("game")); // Обслуживаем статически�
 
 var all_data = {}
 var user_connection = {}
+var timers = {}
 
+function getTimeLeft(timeout) {
+    return Math.ceil((timeout._idleStart + timeout._idleTimeout - Date.now()) / 1000);
+}
+
+// Clear AFK Players
 setInterval(()=>{
 for(let usr in user_connection){
     user_connection[usr] = false
@@ -20,10 +26,12 @@ setTimeout(()=>{
     setInterval(()=>{
     for(let usr in user_connection){
     if(user_connection[usr] == false){
-    setTimeout(()=>{
+    timers[usr] = setTimeout(()=>{
     if(user_connection[usr] == false){
         delete all_data[usr]
         delete user_connection[usr]
+    }else if(timers[usr] != null){
+        clearTimeout(timers[usr])
     }
     },1000*10)
     }

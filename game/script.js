@@ -4,7 +4,6 @@ ctx = canvas.getContext('2d')
 canvas.height = window.innerHeight
 canvas.width = window.innerWidth
 
-
 // Initialize server
 const ws = new WebSocket(`ws://${window.location.host}`);
 
@@ -396,6 +395,14 @@ class Interface{
 	}
 }
 
+function test() {
+  var x = document.createElement("INPUT");
+  x.setAttribute("type", "text");
+  x.setAttribute("value", "Hello World!");
+  document.body.appendChild(x);
+}
+test()
+
 var server = new Server()
 
 // It needed to config draw functions for game objects
@@ -424,6 +431,7 @@ function main(){
 	server.sendToServerGlobal()
 
 	interface.update()
+
 	
 	keyboardInputDict.space = false
 }
