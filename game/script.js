@@ -73,7 +73,8 @@ ctx.lineWidth = 1.5
 function drawCircle(x, y, radius) {
   ctx.beginPath()
   ctx.arc(x, y, radius, 0, 2 * Math.PI, false)
-  ctx.stroke()
+  ctx.fill()
+  ctx.closePath()
 }
 // Get Distance Between Two Points
 function getDistance(x1, y1, x2, y2){
@@ -124,7 +125,7 @@ class Tower{
 		this.player = player
 
 		this.dots = [{deg: 30, dist:10}, {deg: -30, dist:10},
-									 {deg: 30+180, dist:20}, {deg: -30+180, dist:20}]
+									 {deg: 10+180, dist:50}, {deg: -10+180, dist:50}]
 
 		// Variable to define movement direction
 		this.dirDeg = 180
@@ -150,19 +151,32 @@ class Tower{
 	shoot(){ // Shoot by Projectiles
 		let map = keyboardInputDict
 		map.space ? this.projectiles.push({x: server.x, y: server.y, dirDeg: this.dirDeg}):null
+		if(map.space){
+			isShoot = false
+			shootTimer.curr = 0
+		}
 	}
 	draw(){ // draw Tower of Player Tank
-			let rad = 5
-			for(let dot in this.dots){
-					dot = this.dots[dot]
-					drawCircle(Math.sin(dot.deg*Math.PI/180)*dot.dist+this.player.x,Math.cos(dot.deg*Math.PI/180)*dot.dist+this.player.y,rad)
+			let rad = 10
+			ctx.fillStyle = "#69b334"
+			ctx.beginPath()
+			ctx.moveTo(Math.sin(this.dots[0].deg*Math.PI/180)*this.dots[0].dist+this.player.x,
+								 Math.cos(this.dots[0].deg*Math.PI/180)*this.dots[0].dist+this.player.y)
+			for(let doto = 0; doto<this.dots.length; doto++){
+					let dot = this.dots[doto]
+					ctx.lineTo(Math.sin(dot.deg*Math.PI/180)*dot.dist+this.player.x,Math.cos(dot.deg*Math.PI/180)*dot.dist+this.player.y)
 			}
+			ctx.fill()
+			ctx.closePath()
+			drawCircle(this.player.x, this.player.y, 25)
 	}
 	update(isYour = true){
 		this.draw()
 		if(isYour){
 		this.inputRotate()
-		this.shoot()
+		if(isShoot){
+			this.shoot()
+		}
 		}
 	}
 }
@@ -175,8 +189,8 @@ class Player{
 		// Object Points
 		// We seperate game object into two groups of dots: top and down
 		this.dots ={ 
-		top:[{deg:30, dist:50}, {deg:-30,dist:50}],
-		down:[{deg:30+180, dist:50}, {deg:-30+180,dist:50}]
+		top:[{deg:40, dist:50}, {deg:-40,dist:50}],
+		down:[{deg:35+180, dist:70}, {deg:-35+180,dist:70}]
 		}
 		// Variable to define movement direction
 		this.dirDeg = 180
@@ -216,14 +230,19 @@ class Player{
 	draw(){ // Draw Object (Now in base form using basic instrumetal of JS visualizing)
 		let top = this.dots.top
 		let down = this.dots.down
-		let rad = 6
+		let rad = 15
 
-		drawCircle(Math.sin(top[0].deg*Math.PI/180)*top[0].dist+this.x,Math.cos(top[0].deg*Math.PI/180)*top[0].dist+this.y,rad)
-		drawCircle(Math.sin(top[1].deg*Math.PI/180)*top[1].dist+this.x,Math.cos(top[1].deg*Math.PI/180)*top[1].dist+this.y,rad)
-		drawCircle(Math.sin(down[0].deg*Math.PI/180)*down[0].dist+this.x,Math.cos(down[0].deg*Math.PI/180)*down[0].dist+this.y,rad)
-		drawCircle(Math.sin(down[1].deg*Math.PI/180)*down[1].dist+this.x,Math.cos(down[1].deg*Math.PI/180)*down[1].dist+this.y,rad)
+		
+		ctx.fillStyle = "#668252"
 
-		drawCircle(Math.sin((top[0].deg-30)*Math.PI/180)*top[0].dist+this.x,Math.cos((top[0].deg-30)*Math.PI/180)*top[0].dist+this.y,rad)
+		ctx.beginPath()
+		ctx.moveTo(Math.sin(top[0].deg*Math.PI/180)*top[0].dist+this.x,Math.cos(top[0].deg*Math.PI/180)*top[0].dist+this.y)
+		ctx.lineTo(Math.sin(top[1].deg*Math.PI/180)*top[1].dist+this.x,Math.cos(top[1].deg*Math.PI/180)*top[1].dist+this.y)
+		ctx.lineTo(Math.sin(down[0].deg*Math.PI/180)*down[0].dist+this.x,Math.cos(down[0].deg*Math.PI/180)*down[0].dist+this.y)
+		ctx.lineTo(Math.sin(down[1].deg*Math.PI/180)*down[1].dist+this.x,Math.cos(down[1].deg*Math.PI/180)*down[1].dist+this.y)
+		ctx.lineTo(Math.sin(top[0].deg*Math.PI/180)*top[0].dist+this.x,Math.cos(top[0].deg*Math.PI/180)*top[0].dist+this.y)
+		ctx.fill()
+		ctx.closePath()
 	}
 	keepMovementInBorders(){
 		// Player Movement
@@ -263,7 +282,7 @@ class Player{
 
 class Server{
 	constructor(){
-		this.id = parseInt(10**8*Math.random())
+		this.id = parseInt(10**10*Math.random())
 		this.player = null
 		// Global Position
 		this.x = 0 // For Example
@@ -273,13 +292,16 @@ class Server{
 		this.projectiles = {} // all projectiles in scene from server
 
 		this.isDead = false
+
+		this.nickname = "player"+this.id.toString()
 	}
 	sendToServerGlobal(){
 		let ply = this.player
 		const player = JSON.stringify({id:this.id,tag:"player",x:this.x, y:this.y, 
 			                             dots: ply.dots, tower:{dots:ply.Tower.dots},
 			                             projectiles: ply.Tower.projectiles, 
-			                             hp: this.player.hp, score: 0, isDead: this.isDead})
+			                             hp: this.player.hp, score: 0, isDead: this.isDead,
+			                           	 nickname: this.nickname})
 		ws.send(player)
 	}
 	getServerData(){
@@ -319,6 +341,7 @@ class Server{
             	players[obj].id = objects[obj].id
             	players[obj].score = objects[obj].score
             	players[obj].hp = objects[obj].hp
+            	players[obj].nickname = objects[obj].nickname
 							
             	if(projectiles[obj] == null){projectiles[obj] = []}
 
@@ -372,53 +395,77 @@ class Interface{
 	}
 	showLeaderBoard(){
 		ctx.fillStyle = 'black'
-		ctx.font = "25px serif"
+		ctx.font = "500 25px Host Grotesk"
 		ctx.fillText("Leader Board", 15, 30)
 
-		ctx.font = "15px serif"
+		ctx.fillStyle = "#828282"
+		ctx.font = "400 15px Host Grotesk"
 		let count = 0
 		let gap = 15
 		let marginY = 60
 		for(let ply in this.players){
 			if(count == 10){break}
-			ctx.fillText(this.players[ply].id, 15, marginY+count*gap)
-			ctx.fillText(this.players[ply].score, 85, marginY+count*gap)
+			ctx.fillText(this.players[ply].nickname, 15, marginY+count*gap)
+			ctx.fillText(this.players[ply].score, ctx.measureText(this.players[ply].nickname).width+15+10, marginY+count*gap)
 			count++
 		}
 			ctx.fillRect(15, marginY+(count)*15, 100, 2)
-			ctx.fillText(this.players[server.id].id, 15, marginY+(count+1.5)*gap)
-			ctx.fillText(this.players[server.id].score, 85, marginY+(count+1.5)*gap)
+			ctx.fillText(this.players[server.id].nickname, 15, marginY+(count+1.5)*gap)
+			ctx.fillText(this.players[server.id].score, ctx.measureText(this.players[server.id].nickname).width+15+10, marginY+(count+1.5)*gap)
 		
+	}
+	reloadShoot(){
+		if(isShoot == false){
+			let player = server.player
+			let text = ((shootTimer.end - shootTimer.curr)*0.1).toFixed(1).toString()
+			ctx.font = "17px serif"
+			ctx.fillText(text+'s', player.x-ctx.measureText(text).width/2-2, player.y+5)
+		}
 	}
 	update(){
 		this.showLeaderBoard()
+		this.reloadShoot()
 	}
 }
 
-function test() {
-  var x = document.createElement("INPUT");
-  x.setAttribute("type", "text");
-  x.setAttribute("value", "Hello World!");
-  document.body.appendChild(x);
-}
-test()
 
 var server = new Server()
+
+function startGame(){
+	const start = document.getElementById("start")
+	const nickname = document.getElementById("nickname")
+	if(nickname.value.length != 0){
+		server.nickname = nickname.value
+	}
+	start.style.display = "none"
+}
 
 // It needed to config draw functions for game objects
 initDrawConfigurationForAllObjectsInScene()
 
+
+
 var player = new Player()
 server.player = player
+
+// Make shoot limit per second 
+var isShoot = false
+var shootTimer = {curr:0, end:5}
+setInterval(()=>{
+if(shootTimer.curr >= shootTimer.end){
+isShoot = true
+}
+if(isShoot==false){
+shootTimer.curr++
+}
+},100)
 
 var interface = new Interface()
 
 let fps = 60
-/*
-setInterval(()=>{
-	scene.getServerData()
-	scene.sendToServerGlobal()
-},1000)*/
+
+
+
 function main(){
 	setTimeout(()=>{
 	window.requestAnimationFrame(main)
@@ -431,8 +478,5 @@ function main(){
 	server.sendToServerGlobal()
 
 	interface.update()
-
-	
-	keyboardInputDict.space = false
 }
 main()

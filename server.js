@@ -16,7 +16,7 @@ function getTimeLeft(timeout) {
     return Math.ceil((timeout._idleStart + timeout._idleTimeout - Date.now()) / 1000);
 }
 
-// Clear AFK Players
+// Clear AFK and Disconnected Players
 setInterval(()=>{
 for(let usr in user_connection){
     user_connection[usr] = false
@@ -33,7 +33,7 @@ setTimeout(()=>{
     }else if(timers[usr] != null){
         clearTimeout(timers[usr])
     }
-    },1000*10)
+    },1000*30)
     }
     }
     },1000)
@@ -53,7 +53,7 @@ wss.on("connection", (ws) => {
         
         // Отправляем сообщение всем подключенным клиентам
         wss.clients.forEach((client) => {
-            if (client.readyState === WebSocket.OPEN) {
+            if(client.readyState === WebSocket.OPEN) {
                 client.send(JSON.stringify(all_data));
             }
         })
