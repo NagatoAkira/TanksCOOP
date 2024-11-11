@@ -103,7 +103,7 @@ class Impulse{
 		this.points += 1/divide
 	}
 	recharge(){
-		this.points = 1
+		this.points = 0
 	}
 }
 
@@ -124,6 +124,9 @@ class Tower{
 
 		this.dots = [{deg: 30, dist:10}, {deg: -30, dist:10},
 									 {deg: 10+180, dist:50}, {deg: -10+180, dist:50}]
+		// Get Damage							 
+		this.hitboxRadius = 25
+		this.isGotDamage = false
 
 		// Variable to define movement direction
 		this.dirDeg = 180
@@ -156,9 +159,9 @@ class Tower{
 			shootTimer.curr = 0
 		}
 	}
-	draw(){ // draw Tower of Player Tank
+	draw(color = "#69b334"){ // draw Tower of Player Tank
 			let rad = 10
-			ctx.fillStyle = "#69b334"
+			ctx.fillStyle = color
 			ctx.beginPath()
 			ctx.moveTo(Math.sin(this.dots[0].deg*Math.PI/180)*this.dots[0].dist+this.player.x,
 								 Math.cos(this.dots[0].deg*Math.PI/180)*this.dots[0].dist+this.player.y)
@@ -168,10 +171,18 @@ class Tower{
 			}
 			ctx.fill()
 			ctx.closePath()
-			drawCircle(this.player.x, this.player.y, 25)
+			drawCircle(this.player.x, this.player.y, this.hitboxRadius)
 	}
-	update(isYour = true){
+	update(isYour = true, isVisible = true){
+		// Change color if it got damage
+		if(isVisible){
+		if(this.isGotDamage){
+		this.draw("rgb(200,0,0)")
+		}else{
 		this.draw()
+		}
+		}
+		// Shoot and Rotate Controller
 		if(isYour){
 		this.inputRotate()
 		if(isShoot){
@@ -227,13 +238,13 @@ class Player{
 		map.right ? this.rotate(-1):null
 		map.left ? this.rotate(1):null
 	}
-	draw(){ // Draw Object (Now in base form using basic instrumetal of JS visualizing)
+	draw(color = "#668252"){ // Draw Object (Now in base form using basic instrumetal of JS visualizing)
 		let top = this.dots.top
 		let down = this.dots.down
 		let rad = 15
 
 		
-		ctx.fillStyle = "#668252"
+		ctx.fillStyle = color
 
 		ctx.beginPath()
 		ctx.moveTo(Math.sin(top[0].deg*Math.PI/180)*top[0].dist+this.x,Math.cos(top[0].deg*Math.PI/180)*top[0].dist+this.y)
@@ -269,14 +280,20 @@ class Player{
 			this.y = centerY - vect.y*dist*0.999
 		}
 	}
-	update(isYour = true){ // Summurize all active functions in one
-		this.draw()
+	update(isYour = true, isVisible = true){ // Summurize all active functions in one
 		if(isYour){
 		this.keepMovementInBorders()
 		}
 
+		if(isVisible){
+		if(this.Tower.isGotDamage){
+		this.draw("rgb(100,0,0)")
+		}else{
+		this.draw()
+		}
+		}
 		// Update Tower
-		this.Tower.update(isYour) 
+		this.Tower.update(isYour,isVisible)	 
 	}
 }
 
@@ -291,6 +308,8 @@ class Server{
 		this.players = {} // all players in scene from server
 		this.projectiles = {} // all projectiles in scene from server
 
+		this.isGotDamage = false
+		this.recoverImpulse = new Impulse()
 		this.isDead = false
 
 		this.nickname = "player"+this.id.toString()
@@ -300,7 +319,8 @@ class Server{
 		const player = JSON.stringify({id:this.id,tag:"player",x:this.x, y:this.y, 
 			                             dots: ply.dots, tower:{dots:ply.Tower.dots},
 			                             projectiles: ply.Tower.projectiles, 
-			                             hp: this.player.hp, score: 0, isDead: this.isDead,
+			                             hp: this.player.hp, isGotDamage: this.isGotDamage, 
+			                             score: 0, isDead: this.isDead,
 			                           	 nickname: this.nickname})
 		ws.send(player)
 	}
@@ -329,6 +349,7 @@ class Server{
 
            	// Update our data from server
             for(let obj in objects){
+            	if(objects[obj] == null){continue}
 
             	if(objects[obj].tag == "player"){
             	if(players[obj] == null){
@@ -342,14 +363,20 @@ class Server{
             	players[obj].score = objects[obj].score
             	players[obj].hp = objects[obj].hp
             	players[obj].nickname = objects[obj].nickname
+            	players[obj].Tower.isGotDamage = objects[obj].isGotDamage
 							
             	if(projectiles[obj] == null){projectiles[obj] = []}
 
+            	projectiles[obj] = projectiles[obj].filter(n=>n)
   						for(let prj in objects[obj].projectiles){
   							if(projectiles[obj][prj] == null){
   								projectiles[obj].push(new Projectile())
   							}else{
   								let tmp = objects[obj].projectiles[prj]
+  								if(tmp == null){
+  									delete projectiles[obj][prj]
+  									continue
+  								}
   								projectiles[obj][prj].x = tmp.x - x + player.x
 									projectiles[obj][prj].y = tmp.y - y + player.y
 
@@ -365,16 +392,61 @@ class Server{
             console.error("WebSocket Error:", error)
         }
 	}
+	registerDamage(){
+		// Get Position of All players who is in 2000m distance
+		let nearbyIDPlayers = []
+		for(let ply in this.players){
+			if(ply == this.id){continue}
+			if(getDistance(this.players[ply].x, this.players[ply].y, this.player.x, this.player.y)<2000){
+				nearbyIDPlayers.push(ply)
+			}
+		}
+
+		// Register Damage
+		for(let ply in nearbyIDPlayers){
+			ply = nearbyIDPlayers[ply]
+
+			for(let prj in this.projectiles[ply]){
+				prj = this.projectiles[ply][prj]
+				if(getDistance(prj.x, prj.y, this.player.x, this.player.y) <= this.player.Tower.hitboxRadius){
+					this.player.hp--
+					this.isGotDamage = true
+					console.log(this.player.hp)
+					break
+				}
+			}
+			// Clear Projectile
+			for(let prj in this.projectiles[this.id]){
+				let prjo = this.projectiles[this.id][prj]
+				if(prjo == 0){continue}
+				if(getDistance(this.players[ply].x, this.players[ply].y, prjo.x, prjo.y) <= this.player.Tower.hitboxRadius){
+					delete this.player.Tower.projectiles[prj]
+					delete this.projectiles[this.id][prj]
+				}
+			}
+		}
+
+		// Get Damage
+		if(this.isGotDamage){
+		this.recoverImpulse.activate(10)
+			if(this.recoverImpulse.points >= 1){
+				this.isGotDamage = false
+				this.recoverImpulse.recharge()
+			}
+		}
+	}
 	update(){
-		this.player.update()
+		// Draw all players
+		this.player.update(true,false)
 		for(let player in this.players){
-			if(player == this.id || this.players[player] == null){continue}
+			if(this.players[player] == null){continue}
 			player = this.players[player]
-			player.update(false)
+			player.update(false,true)
 		}
 		// Draw all projectiles
 		for(let prj in this.projectiles){
 			if(this.projectiles[prj] == null){continue}
+			this.projectiles[prj] = this.projectiles[prj].filter(n=>n)	
 			prj = this.projectiles[prj]
 			for(let prjo in prj){
 				if(prj[prjo] == null){continue}
@@ -383,19 +455,23 @@ class Server{
 			}
 		}
 		// Update position of your projectiles
+		this.player.Tower.projectiles = this.player.Tower.projectiles.filter(n=>n)
 		for(let prj in this.projectiles[this.id]){
 		let prjo  = this.player.Tower.projectiles[prj]
 		if(prjo == null){continue}
 		prjo.x += Math.sin(prjo.dirDeg*Math.PI/180) * prjo.speed
 		prjo.y += Math.cos(prjo.dirDeg*Math.PI/180) * prjo.speed
 
+		// Clear projectile if it is out of screen
 		if(getDistance(prjo.x, prjo.y, this.x, this.y) > 2000){
-			this.projectiles[this.id][prj] = null
-		}
+			delete this.player.Tower.projectiles[prj]
+			delete this.projectiles[this.id][prj]
 		}
 	}
+	// Register Damage
+	this.registerDamage()
 }
-
+}
 class Interface{
 	constructor(){
 		this.players = server.players
@@ -404,6 +480,11 @@ class Interface{
 		ctx.fillStyle = 'rgba(0,0,0,0.7)'
 		ctx.font = "500 25px Host Grotesk"
 		ctx.fillText("Leader Board", 15, 30)
+
+		//Show Player Position
+		ctx.fillStyle = 'rgba(0,0,0,0.4)'
+		ctx.font = "500 14px Host Grotesk"
+		ctx.fillText(`x: ${Math.round(server.x)} y: ${Math.round(server.y)}`, 175, 30)
 
 		ctx.fillStyle = "rgba(0,0,0,0.5)"
 		ctx.font = "400 15px Host Grotesk"
