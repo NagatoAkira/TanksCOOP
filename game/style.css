@@ -43,7 +43,7 @@ button:active{
  	background-color: white;
 	width: 350px;
 	height: 250px;
-	margin-top: calc(50% - 250px);
+	top: calc(50% - 120px);
  	margin-left: calc(50% - 220px);
  	border-radius: 2px;
 }

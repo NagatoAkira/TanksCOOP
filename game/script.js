@@ -401,11 +401,11 @@ class Interface{
 		this.players = server.players
 	}
 	showLeaderBoard(){
-		ctx.fillStyle = 'black'
+		ctx.fillStyle = 'rgba(0,0,0,0.7)'
 		ctx.font = "500 25px Host Grotesk"
 		ctx.fillText("Leader Board", 15, 30)
 
-		ctx.fillStyle = "#828282"
+		ctx.fillStyle = "rgba(0,0,0,0.5)"
 		ctx.font = "400 15px Host Grotesk"
 		let count = 0
 		let gap = 15
@@ -430,9 +430,19 @@ class Interface{
 			ctx.fillText(text+'s', player.x-ctx.measureText(text).width/2-2, player.y+5)
 		}
 	}
+	showNickname(){
+		ctx.font = "400 15px Host Grotesk"
+		for(let ply in this.players){
+			if(this.players[ply].id != server.id){
+				ply = this.players[ply]
+				ctx.fillText(ply.nickname, ply.x - ctx.measureText(ply.nickname).width/2, ply.y+ply.dots.down[0].dist)
+			}
+		}
+	}
 	update(){
 		this.showLeaderBoard()
 		this.reloadShoot()
+		this.showNickname()
 	}
 }
 
