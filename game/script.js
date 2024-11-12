@@ -299,6 +299,9 @@ class Player{
 
 class Server{
 	constructor(){
+		// Check Start Of Game
+		this.isGameBegan = false
+		// Id And Player
 		this.id = parseInt(10**10*Math.random())
 		this.player = null
 		// Global Position
@@ -437,7 +440,7 @@ class Server{
 	}
 	update(){
 		// Draw all players
-		this.player.update(true,false)
+		this.isGameBegan ? this.player.update(true,false):null // Check Start of The Game
 		for(let player in this.players){
 			if(this.players[player] == null){continue}
 			player = this.players[player]
@@ -455,6 +458,7 @@ class Server{
 			}
 		}
 		// Update position of your projectiles
+		if(this.isGameBegan){ // Check Start of The Game
 		this.player.Tower.projectiles = this.player.Tower.projectiles.filter(n=>n)
 		for(let prj in this.projectiles[this.id]){
 		let prjo  = this.player.Tower.projectiles[prj]
@@ -470,6 +474,7 @@ class Server{
 	}
 	// Register Damage
 	this.registerDamage()
+	}
 }
 }
 class Interface{
@@ -484,7 +489,7 @@ class Interface{
 		//Show Player Position
 		ctx.fillStyle = 'rgba(0,0,0,0.4)'
 		ctx.font = "500 14px Host Grotesk"
-		ctx.fillText(`x: ${Math.round(server.x)} y: ${Math.round(server.y)}`, 175, 30)
+		ctx.fillText(`x: ${Math.round(server.x/100)} y: ${Math.round(server.y/100)}`, 175, 30)
 
 		ctx.fillStyle = "rgba(0,0,0,0.5)"
 		ctx.font = "400 15px Host Grotesk"
@@ -492,17 +497,20 @@ class Interface{
 		let gap = 15
 		let marginY = 60
 		for(let ply in this.players){
+			if(!server.isGameBegan && ply == server.id){continue}
 			if(count == 10){break}
 			ctx.fillText(this.players[ply].nickname, 15, marginY+count*gap)
 			ctx.fillText(this.players[ply].score, ctx.measureText(this.players[ply].nickname).width+15+10, marginY+count*gap)
 			count++
 		}
+			if(server.isGameBegan){ // Check Start of The Game
 			ctx.fillRect(15, marginY+(count)*15, 100, 2)
 			ctx.fillText(this.players[server.id].nickname, 15, marginY+(count+1.5)*gap)
 			ctx.fillText(this.players[server.id].score, ctx.measureText(this.players[server.id].nickname).width+15+10, marginY+(count+1.5)*gap)
-		
+		}
 	}
 	reloadShoot(){
+		if(!server.isGameBegan){return null} // Check Start of The Game
 		if(isShoot == false){
 			let player = server.player
 			let text = ((shootTimer.end - shootTimer.curr)*0.1).toFixed(1).toString()
@@ -528,7 +536,7 @@ class Interface{
 }
 
 
-var server = new Server()
+const server = new Server()
 
 function startGame(){
 	const start = document.getElementById("start")
@@ -537,6 +545,7 @@ function startGame(){
 		server.nickname = nickname.value
 	}
 	start.style.display = "none"
+	server.isGameBegan = true
 }
 
 // It needed to config draw functions for game objects
@@ -544,7 +553,7 @@ initDrawConfigurationForAllObjectsInScene()
 
 
 
-var player = new Player()
+const player = new Player()
 server.player = player
 
 // Make shoot limit per second 
