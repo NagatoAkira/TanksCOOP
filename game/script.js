@@ -178,7 +178,11 @@ class Tower{
 		if(isVisible){
 		if(this.isGotDamage){
 		this.draw("rgb(200,0,0)")
-		}else{
+		}
+		else if(!this.player.isConnected || this.player.isDead){
+		this.draw("rgb(153,153,153)")
+		}
+		else{
 		this.draw()
 		}
 		}
@@ -194,6 +198,8 @@ class Tower{
 
 class Player{
 	constructor(){
+		// Disconnect Player
+		this.isGone = false
 		// Position
 		this.x = window.innerWidth/2
 		this.y = window.innerHeight/2
@@ -288,7 +294,11 @@ class Player{
 		if(isVisible){
 		if(this.Tower.isGotDamage){
 		this.draw("rgb(100,0,0)")
-		}else{
+		}
+		else if(!this.isConnected || this.isDead){
+		this.draw("rgb(92,92,92)")
+		}
+		else{
 		this.draw()
 		}
 		}
@@ -323,8 +333,8 @@ class Server{
 			                             dots: ply.dots, tower:{dots:ply.Tower.dots},
 			                             projectiles: ply.Tower.projectiles, 
 			                             hp: this.player.hp, isGotDamage: this.isGotDamage, 
-			                             score: 0, isDead: this.isDead,
-			                           	 nickname: this.nickname})
+			                             score: 0, isDead: this.isDead, isConnected: true,
+			                           	 nickname: this.nickname, isGone: this.player.isGone})
 		ws.send(player)
 	}
 	getServerData(){
@@ -358,6 +368,9 @@ class Server{
             	if(players[obj] == null){
             		players[obj] = new Player()
             	}
+            	players[obj].isConnected = objects[obj].isConnected
+            	players[obj].isGone = objects[obj].isGone
+
             	players[obj].x = objects[obj].x - x + player.x 
             	players[obj].y = objects[obj].y - y + player.y
             	players[obj].dots = objects[obj].dots
@@ -447,6 +460,7 @@ class Server{
 			player.update(false,true)
 		}
 		// Draw all projectiles
+		ctx.fillStyle = "#69b334"
 		for(let prj in this.projectiles){
 			if(this.projectiles[prj] == null){continue}
 			this.projectiles[prj] = this.projectiles[prj].filter(n=>n)	
@@ -522,7 +536,7 @@ class Interface{
 	showNickname(){
 		ctx.font = "400 15px Host Grotesk"
 		for(let ply in this.players){
-			if(this.players[ply].id != server.id){
+			if(this.players[ply].id != server.id && !this.players[ply].Dead){
 				ply = this.players[ply]
 				ctx.fillText(ply.nickname, ply.x - ctx.measureText(ply.nickname).width/2, ply.y+ply.dots.down[0].dist)
 			}
@@ -536,24 +550,24 @@ class Interface{
 }
 
 
-const server = new Server()
+var server = new Server()
 
 function startGame(){
+	if(!server.isGameBegan){
 	const start = document.getElementById("start")
 	const nickname = document.getElementById("nickname")
 	if(nickname.value.length != 0){
 		server.nickname = nickname.value
 	}
 	start.style.display = "none"
+	}
 	server.isGameBegan = true
 }
 
 // It needed to config draw functions for game objects
 initDrawConfigurationForAllObjectsInScene()
 
-
-
-const player = new Player()
+var player = new Player()
 server.player = player
 
 // Make shoot limit per second 
@@ -586,5 +600,13 @@ function main(){
 	server.sendToServerGlobal()
 
 	interface.update()
+	if(server.players[server.id].isGone){
+		console.log("yes")
+		server = new Server()
+		player = new Player()
+		server.player = player
+		start.style.display = "inline"
+		interface = new Interface()
+	}
 }
 main()

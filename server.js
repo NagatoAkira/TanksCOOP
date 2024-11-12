@@ -12,13 +12,12 @@ var all_data = {}
 var user_connection = {}
 var timers = {}
 
-function getTimeLeft(timeout) {
-    return Math.ceil((timeout._idleStart + timeout._idleTimeout - Date.now()) / 1000);
-}
+var user_blacklist = {}
 
 // Clear AFK and Disconnected Players
 setInterval(()=>{
 for(let usr in user_connection){
+    all_data[usr].isConnected = false
     user_connection[usr] = false
 }
 },1000)
@@ -28,12 +27,13 @@ setTimeout(()=>{
     if(user_connection[usr] == false){
     timers[usr] = setTimeout(()=>{
     if(user_connection[usr] == false){
+        user_blacklist[usr] = true
         delete all_data[usr]
         delete user_connection[usr]
-    }else if(timers[usr] != null){
-        clearTimeout(timers[usr])
     }
-    },1000*30)
+    clearTimeout(timers[usr])
+    delete timers[usr]
+    },1000*5)
     }
     }
     },1000)
@@ -49,12 +49,14 @@ wss.on("connection", (ws) => {
         message = JSON.parse(`${message}`)
 
         all_data[message.id] = message
+
+        all_data[message.id].isConnected = true
         user_connection[message.id] = true
-        
+
         // Отправляем сообщение всем подключенным клиентам
         wss.clients.forEach((client) => {
             if(client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify(all_data));
+                client.send(JSON.stringify(all_data))
             }
         })
     })
