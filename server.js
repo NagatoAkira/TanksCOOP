@@ -35,8 +35,14 @@ function clearTimer(usr, all_data, user_connection, timers) {
 setTimeout(()=>{
     setInterval(()=>{
     for(let usr in user_connection){
+    // If player is disconnected we should wait 15 seconds to kickout
     if(user_connection[usr] == false){
     timers[usr] = setTimeout(clearTimer,1000*15, usr, all_data, user_connection, timers)
+    }
+    // If player in blacklist we have to kick out immediately
+    if(user_blacklist[usr]){
+    delete all_data[usr]
+    delete user_connection[usr]    
     }
     }
     },1000)
