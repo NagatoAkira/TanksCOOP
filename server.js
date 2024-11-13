@@ -21,23 +21,34 @@ for(let usr in user_connection){
     user_connection[usr] = false
 }
 },1000)
-setTimeout(()=>{
-    setInterval(()=>{
-    for(let usr in user_connection){
+
+// To clear timeout if timer got green flag
+function clearTimer(usr, all_data, user_connection, timers) {
     if(user_connection[usr] == false){
-    timers[usr] = setTimeout(()=>{
-    if(user_connection[usr] == false){
-        user_blacklist[usr] = true
+        user_blacklist[usr] = usr
         delete all_data[usr]
         delete user_connection[usr]
     }
     clearTimeout(timers[usr])
-    delete timers[usr]
-    },1000*5)
+}
+// Kick out player if it disconnected too long
+setTimeout(()=>{
+    setInterval(()=>{
+    for(let usr in user_connection){
+    if(user_connection[usr] == false){
+    timers[usr] = setTimeout(clearTimer,1000*15, usr, all_data, user_connection, timers)
     }
     }
     },1000)
 },500)
+// Update Server
+setInterval(()=>{
+all_data = {}
+user_connection = {}
+timers = {}
+
+user_blacklist = {}
+},1000*60*60)
 
 
 // Обработка подключения WebSocket
@@ -52,6 +63,10 @@ wss.on("connection", (ws) => {
 
         all_data[message.id].isConnected = true
         user_connection[message.id] = true
+
+        if(user_blacklist[message.id] != null){
+            all_data[message.id].isKickOut = true
+        }
 
         // Отправляем сообщение всем подключенным клиентам
         wss.clients.forEach((client) => {

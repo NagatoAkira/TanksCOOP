@@ -199,7 +199,7 @@ class Tower{
 class Player{
 	constructor(){
 		// Disconnect Player
-		this.isGone = false
+		this.isKickOut = false
 		// Position
 		this.x = window.innerWidth/2
 		this.y = window.innerHeight/2
@@ -312,7 +312,7 @@ class Server{
 		// Check Start Of Game
 		this.isGameBegan = false
 		// Id And Player
-		this.id = parseInt(10**10*Math.random())
+		this.id = parseInt(10**16*Math.random())
 		this.player = null
 		// Global Position
 		this.x = 0 // For Example
@@ -334,7 +334,7 @@ class Server{
 			                             projectiles: ply.Tower.projectiles, 
 			                             hp: this.player.hp, isGotDamage: this.isGotDamage, 
 			                             score: 0, isDead: this.isDead, isConnected: true,
-			                           	 nickname: this.nickname, isGone: this.player.isGone})
+			                           	 nickname: this.nickname, isKickOut: this.player.isKickOut})
 		ws.send(player)
 	}
 	getServerData(){
@@ -369,7 +369,7 @@ class Server{
             		players[obj] = new Player()
             	}
             	players[obj].isConnected = objects[obj].isConnected
-            	players[obj].isGone = objects[obj].isGone
+            	players[obj].isKickOut = objects[obj].isKickOut
 
             	players[obj].x = objects[obj].x - x + player.x 
             	players[obj].y = objects[obj].y - y + player.y
@@ -577,7 +577,7 @@ setInterval(()=>{
 if(shootTimer.curr >= shootTimer.end){
 isShoot = true
 }
-if(isShoot==false){
+if(!isShoot){
 shootTimer.curr++
 }
 },100)
@@ -600,8 +600,7 @@ function main(){
 	server.sendToServerGlobal()
 
 	interface.update()
-	if(server.players[server.id].isGone){
-		console.log("yes")
+	if(server.players[server.id].isKickOut){
 		server = new Server()
 		player = new Player()
 		server.player = player
