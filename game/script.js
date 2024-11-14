@@ -302,6 +302,8 @@ class Player{
 		this.draw()
 		}
 		}
+		// If player HP is equal to zero register death
+		if(this.hp <= 0){this.isDead = true}
 		// Update Tower
 		this.Tower.update(isYour,isVisible)	 
 	}
@@ -453,7 +455,8 @@ class Server{
 	}
 	update(){
 		// Draw all players
-		this.isGameBegan ? this.player.update(true,false):null // Check Start of The Game
+		this.isGameBegan && !this.player.isDead ? this.player.update(true,false):null // Check Start of The Game
+		this.player.isDead ? this.player.draw():null // If player is dead it is lost control
 		for(let player in this.players){
 			if(this.players[player] == null){continue}
 			player = this.players[player]
@@ -536,7 +539,7 @@ class Interface{
 	showNickname(){
 		ctx.font = "400 15px Host Grotesk"
 		for(let ply in this.players){
-			if(this.players[ply].id != server.id && !this.players[ply].Dead){
+			if(this.players[ply].id != server.id && !this.players[ply].isDead){
 				ply = this.players[ply]
 				ctx.fillText(ply.nickname, ply.x - ctx.measureText(ply.nickname).width/2, ply.y+ply.dots.down[0].dist)
 			}
@@ -552,16 +555,25 @@ class Interface{
 
 var server = new Server()
 
+// Input Nickname and start the Game
+const start = document.getElementById("start")
+const nickname = document.getElementById("nickname")
 function startGame(){
 	if(!server.isGameBegan){
-	const start = document.getElementById("start")
-	const nickname = document.getElementById("nickname")
 	if(nickname.value.length != 0){
 		server.nickname = nickname.value
 	}
 	start.style.display = "none"
 	}
 	server.isGameBegan = true
+}
+const initReloadGame = {IfDead:false}
+function reloadGame(){
+	server = new Server()
+	player = new Player()
+	server.player = player
+	start.style.display = "inline"
+	interface = new Interface()
 }
 
 // It needed to config draw functions for game objects
@@ -586,8 +598,7 @@ var interface = new Interface()
 
 let fps = 60
 
-
-
+var isDead = false //It is two step verification to register death
 function main(){
 	setTimeout(()=>{
 	window.requestAnimationFrame(main)
@@ -601,11 +612,17 @@ function main(){
 
 	interface.update()
 	if(server.players[server.id].isKickOut){
-		server = new Server()
-		player = new Player()
-		server.player = player
-		start.style.display = "inline"
-		interface = new Interface()
+		reloadGame()
+	}
+
+	// Register Death
+	if(player.isDead && !isDead){
+		isDead = true
+		setTimeout((initReloadGame)=>{initReloadGame.IfDead = true},1000*3,initReloadGame)
+	}
+	if(isDead && initReloadGame.IfDead){
+		reloadGame()
+		isDead = false
 	}
 }
 main()
