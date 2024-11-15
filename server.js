@@ -14,12 +14,22 @@ var timers = {}
 
 var user_blacklist = {}
 
+
+var clients = {isMessageSent:{},clientID:{},playerID:{},count:0} // Check all messages was sent
 // Clear AFK and Disconnected Players
 setInterval(()=>{
-for(let usr in user_connection){
-    all_data[usr].isConnected = false
-    user_connection[usr] = false
-}
+    for(let usr in user_connection){
+        all_data[usr].isConnected = false
+        user_connection[usr] = false
+        let id = clients.playerID[usr]
+        if(clients.clientID[id] == usr){
+            if(clients.isMessageSent[id]){
+                all_data[usr].isConnected = true
+                user_connection[usr] = true
+            }
+            clients.isMessageSent[id] = false
+        }
+    } 
 },1000)
 
 // To clear timeout if timer got green flag
@@ -60,10 +70,15 @@ user_blacklist = {}
 // Обработка подключения WebSocket
 wss.on("connection", (ws) => {
     console.log("User connected");
+    ws.id = clients.count
+    clients.isMessageSent[ws.id] = false
+    clients.count++
 
     // Обработка сообщения от клиента
     ws.on("message", (message) => {
         message = JSON.parse(`${message}`)
+        clients.clientID[ws.id] = message.id
+        clients.playerID[message.id] = ws.id
 
         all_data[message.id] = message
 
@@ -73,23 +88,20 @@ wss.on("connection", (ws) => {
         if(user_blacklist[message.id] != null){
             all_data[message.id].isKickOut = true
         }
-
-        // Отправляем сообщение всем подключенным клиентам
-        wss.clients.forEach((client) => {
-            if(client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify(all_data))
-            }
-        })
+        ws.send(JSON.stringify(all_data))
+        clients.isMessageSent[ws.id] = true
     })
 
     // Обработка отключения клиента
     ws.on("close", () => {
+        delete clients.isMessageSent[ws.id]
+        delete clients.clientID[ws.id]
         console.log("User disconnected");
     })
 })
 
 // Запуск сервера
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });

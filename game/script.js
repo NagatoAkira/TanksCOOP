@@ -6,7 +6,8 @@ canvas.width = window.innerWidth
 
 // Initialize server
 const ws = new WebSocket(`ws://${window.location.host}`);
-
+console.log(window.location)
+//`ws://${window.location.host}`
 // This variable exists because of listener in next
 var keyboardInputDict = {up:false, down: false, left: false, right: false, z: false, x: false, space: false}
 onkeydown = function(event){
@@ -198,6 +199,8 @@ class Tower{
 
 class Player{
 	constructor(){
+		// Connection status
+		this.isConnected = true
 		// Disconnect Player
 		this.isKickOut = false
 		// Position
@@ -290,7 +293,6 @@ class Player{
 		if(isYour){
 		this.keepMovementInBorders()
 		}
-
 		if(isVisible){
 		if(this.Tower.isGotDamage){
 		this.draw("rgb(100,0,0)")
@@ -335,7 +337,7 @@ class Server{
 			                             dots: ply.dots, tower:{dots:ply.Tower.dots},
 			                             projectiles: ply.Tower.projectiles, 
 			                             hp: this.player.hp, isGotDamage: this.isGotDamage, 
-			                             score: 0, isDead: this.isDead, isConnected: true,
+			                             score: 0, isDead: this.isDead, isConnected: this.player.isConnected,
 			                           	 nickname: this.nickname, isKickOut: this.player.isKickOut})
 		ws.send(player)
 	}
