@@ -99,10 +99,10 @@ wss.on("connection", (ws) => {
         console.log("User disconnected");
     })
 })
-/*
+
 // Запуск сервера
 const PORT = process.env.PORT || 57412;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
-*/
+
