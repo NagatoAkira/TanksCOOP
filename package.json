@@ -6,13 +6,6 @@
   "scripts": {
     "start": "node server.js"
   },
-  "dependencies": {
-    "ws": "9.5.0",
-    "express": "9.5.0"
-  },
-  "engines": {
-    "node": ">=14.x"
-  },
   "keywords": [],
   "author": "",
   "license": "ISC"
