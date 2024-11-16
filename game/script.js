@@ -5,9 +5,8 @@ canvas.height = window.innerHeight
 canvas.width = window.innerWidth
 
 // Initialize server
-const ws = new WebSocket(`ws://${window.location.host}`);
-console.log(window.location)
-//`ws://${window.location.host}`
+const ws = new WebSocket("https://tankscoop-6d35f2663bce.herokuapp.com");
+//"https://tankscoop-6d35f2663bce.herokuapp.com"
 // This variable exists because of listener in next
 var keyboardInputDict = {up:false, down: false, left: false, right: false, z: false, x: false, space: false}
 onkeydown = function(event){
@@ -136,10 +135,10 @@ class Tower{
 		// (only configuration other operation will be completed by server)
 		this.projectiles = [] // There will be added projetctiles
 
-		this.projectileSpeed = 5
+		this.projectileSpeed = 8
 	}
 	rotate(deg){
-		deg *= 4
+		deg *= 8
 		for(let dot in this.dots){
 			dot = this.dots[dot]
 			dot.deg += deg
@@ -215,7 +214,7 @@ class Player{
 		// Variable to define movement direction
 		this.dirDeg = 180
 		// Speed
-		this.speed = 8
+		this.speed = 16
 		// Health Points
 		this.hp = 3
 		// Init Tower to Shoot In Game
@@ -231,7 +230,7 @@ class Player{
 	rotate(deg){
 		let top = this.dots.top
 		let down = this.dots.down
-		deg *= 4
+		deg *= 8
 
 		top[0].deg += deg
 		top[1].deg += deg
@@ -457,10 +456,10 @@ class Server{
 	}
 	update(){
 		// Draw all players
-		this.isGameBegan && !this.player.isDead ? this.player.update(true,false):null // Check Start of The Game
+		this.isGameBegan && !this.player.isDead ? this.player.update(true,true):null // Check Start of The Game
 		this.player.isDead ? this.player.draw():null // If player is dead it is lost control
 		for(let player in this.players){
-			if(this.players[player] == null){continue}
+			if(this.players[player] == null || player == this.id){continue}
 			player = this.players[player]
 			player.update(false,true)
 		}
@@ -598,7 +597,7 @@ shootTimer.curr++
 
 var interface = new Interface()
 
-let fps = 60
+let fps = 40
 
 var isDead = false //It is two step verification to register death
 function main(){
