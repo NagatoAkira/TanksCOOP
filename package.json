@@ -6,12 +6,8 @@
   "scripts": {
     "start": "node server.js"
   },
-  "dependencies":{
-    "express":"9.5.0",
-    "ws":"9.5.0"
-  },
-  "engines": {
-    "node": "18.15.0"
+  "dependencies": {
+    "express":"*"
   },
   "keywords": [],
   "author": "",
