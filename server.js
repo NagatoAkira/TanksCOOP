@@ -6,7 +6,7 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
-app.use(express.static("game")); // Обслуживаем статические файлы из папки 'game'
+app.use(express.static("game")); // Service static filec from foder 'game'
 
 var all_data = {}
 var user_connection = {}
@@ -67,14 +67,12 @@ user_blacklist = {}
 },1000*60*60)
 
 
-// Обработка подключения WebSocket
 wss.on("connection", (ws) => {
     console.log("User connected");
     ws.id = clients.count
     clients.isMessageSent[ws.id] = false
     clients.count++
 
-    // Обработка сообщения от клиента
     ws.on("message", (message) => {
         message = JSON.parse(`${message}`)
         clients.clientID[ws.id] = message.id
@@ -92,7 +90,6 @@ wss.on("connection", (ws) => {
         clients.isMessageSent[ws.id] = true
     })
 
-    // Обработка отключения клиента
     ws.on("close", () => {
         delete clients.isMessageSent[ws.id]
         delete clients.clientID[ws.id]
@@ -100,7 +97,7 @@ wss.on("connection", (ws) => {
     })
 })
 
-// Запуск сервера
+// Run Server
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
