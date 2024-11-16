@@ -6,7 +6,12 @@ canvas.width = window.innerWidth
 
 // Initialize server
 const ws = new WebSocket("https://tankscoop-6d35f2663bce.herokuapp.com");
+<<<<<<< HEAD
 //"https://tankscoop-6d35f2663bce.herokuapp.com"
+=======
+console.log(window.location)
+//`ws://${window.location.host}`
+>>>>>>> 00871aaa6459279ccc533ed2b159af3ed671a33f
 // This variable exists because of listener in next
 var keyboardInputDict = {up:false, down: false, left: false, right: false, z: false, x: false, space: false}
 onkeydown = function(event){

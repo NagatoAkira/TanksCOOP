@@ -101,7 +101,12 @@ wss.on("connection", (ws) => {
 })
 
 // Запуск сервера
+<<<<<<< HEAD
 const PORT = process.env.PORT || 3000;
+=======
+const PORT = process.env.PORT || 57412;
+>>>>>>> 00871aaa6459279ccc533ed2b159af3ed671a33f
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
+
