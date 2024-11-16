@@ -3,12 +3,15 @@
   "version": "1.0.0",
   "description": "",
   "main": "server.js",
-  "dependencies": {
-    "ws": "^8.0.0",
-    "express": "^8.0.0"
-  },
   "scripts": {
     "start": "node server.js"
+  },
+  "dependencies":{
+    "express":"9.5.0",
+    "ws":"9.5.0"
+  }
+  "engines": {
+    "node": "18.15.0"
   },
   "keywords": [],
   "author": "",
