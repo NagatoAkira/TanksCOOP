@@ -5,7 +5,7 @@ canvas.height = window.innerHeight
 canvas.width = window.innerWidth
 
 // Initialize server
-const ws = new WebSocket(`ws://${window.location.host}`);
+const ws = new WebSocket("https://tankscoop-6d35f2663bce.herokuapp.com");
 console.log(window.location)
 //`ws://${window.location.host}`
 // This variable exists because of listener in next
