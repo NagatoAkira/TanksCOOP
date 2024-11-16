@@ -598,7 +598,7 @@ shootTimer.curr++
 
 var interface = new Interface()
 
-let fps = 60
+let fps = 25
 
 var isDead = false //It is two step verification to register death
 function main(){
